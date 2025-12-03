@@ -70,32 +70,49 @@ def tts_line_to_mp3_bytes(text: str, voice: str, speed: float) -> bytes:
 
 def render_conversation_bytes(req: RenderRequest) -> bytes:
     """
-    For all segments in the request, call TTS and concatenate MP3 bytes.
-    NOTE: This is a simple concatenation of MP3 data. Most players handle this fine.
+    Generate full conversation MP3 with:
+    - micro-pauses
+    - fade in / fade out
+    - NO background music
     """
-    all_bytes = b""
+    final_audio = AudioSegment.silent(duration=500)  # 0.5 sec initial silence
 
-    for seg in req.segments:
+    for i, seg in enumerate(req.segments):
         text = seg.text.strip()
         if not text:
             continue
 
         speaker = seg.speaker.upper()
-        voice = VOICE_MAP.get(speaker, "alloy")  # default to Dr Arjun voice
+        voice = VOICE_MAP.get(speaker, "alloy")
 
-        # choose speed by speaker
-if speaker == "DR_ARJUN":
-    speed = 0.95     # slightly slower
-elif speaker == "RIYA":
-    speed = 1.05     # slightly faster
-else:
-    speed = 1.0
+        # ✅ SPEECH SPEED CONTROL
+        if speaker == "DR_ARJUN":
+            speed = 0.95     # slower, mentor-like
+        elif speaker == "RIYA":
+            speed = 1.05     # slightly faster, energetic
+        else:
+            speed = 1.0
 
-audio_bytes = tts_line_to_mp3_bytes(text, voice, speed)
-        all_bytes += audio_bytes
+        audio_bytes = tts_line_to_mp3_bytes(text, voice, speed)
 
-    return all_bytes
+        clip = AudioSegment.from_file_using_temporary_files(audio_bytes, format="mp3")
 
+        # ✅ EMOTIONAL MICRO-PAUSE LOGIC
+        emotional_words = ["honestly", "ahh", "umm", "wait", "sir", "hmm"]
+
+        if any(w in text.lower() for w in emotional_words):
+            pause = AudioSegment.silent(duration=500)  # emotional pause
+        else:
+            pause = AudioSegment.silent(duration=300)  # normal pause
+
+        final_audio += clip + pause
+
+    # ✅ Fade in & fade out only (no music)
+    final_audio = final_audio.fade_in(1200).fade_out(1500)
+
+    buf = BytesIO()
+    final_audio.export(buf, format="mp3")
+    return buf.getvalue()
 
 # ---------- API endpoint ----------
 
