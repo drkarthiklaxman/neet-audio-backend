@@ -39,8 +39,8 @@ class RenderRequest(BaseModel):
 
 # Map speakers to OpenAI TTS voices
 VOICE_MAP = {
-    "DR_ARJUN": "alloy",   # mentor voice
-    "RIYA": "nova",        # student voice
+    "DR_ARJUN": "onyx",   # mentor voice
+    "RIYA": "shimmer",        # student voice
 }
 
 TTS_MODEL = "gpt-4o-mini-tts"
