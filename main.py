@@ -47,20 +47,22 @@ TTS_MODEL = "gpt-4o-mini-tts"
 
 
 # ---------- Helper: call OpenAI TTS for one line ----------
+from io import BytesIO
 
 def tts_line_to_mp3_bytes(text: str, voice: str) -> bytes:
     """
     Call OpenAI TTS and return MP3 bytes for the given text+voice.
+    Uses streaming API (no 'format' argument needed).
     """
-    response = client.audio.speech.create(
+    with client.audio.speech.with_streaming_response.create(
         model=TTS_MODEL,
         voice=voice,
         input=text,
-        format="mp3",
-    )
-    audio_bytes = response.read()
-    return audio_bytes
-
+    ) as response:
+        buf = BytesIO()
+        for chunk in response.iter_bytes():
+            buf.write(chunk)
+        return buf.getvalue()
 
 # ---------- Core render logic ----------
 
