@@ -92,7 +92,7 @@ def render_conversation_bytes(req: RenderRequest) -> bytes:
 
         # Speed tuning per speaker
         if speaker == "DR_ARJUN":
-            speed = 0.95   # slightly slower
+            speed = 1.00   # slightly slower
         elif speaker == "RIYA":
             speed = 1.05   # slightly faster
         else:
