@@ -48,16 +48,18 @@ TTS_MODEL = "gpt-4o-mini-tts"
 
 # ---------- Helper: call OpenAI TTS for one line ----------
 from io import BytesIO
+from io import BytesIO
 
-def tts_line_to_mp3_bytes(text: str, voice: str) -> bytes:
+def tts_line_to_mp3_bytes(text: str, voice: str, speed: float) -> bytes:
     """
-    Call OpenAI TTS and return MP3 bytes for the given text+voice.
-    Uses streaming API (no 'format' argument needed).
+    Call OpenAI TTS and return MP3 bytes.
+    'speed' can be e.g. 0.9 (slower) or 1.05 (slightly faster).
     """
     with client.audio.speech.with_streaming_response.create(
         model=TTS_MODEL,
         voice=voice,
         input=text,
+        speed=speed,
     ) as response:
         buf = BytesIO()
         for chunk in response.iter_bytes():
@@ -81,7 +83,15 @@ def render_conversation_bytes(req: RenderRequest) -> bytes:
         speaker = seg.speaker.upper()
         voice = VOICE_MAP.get(speaker, "alloy")  # default to Dr Arjun voice
 
-        audio_bytes = tts_line_to_mp3_bytes(text, voice)
+        # choose speed by speaker
+if speaker == "DR_ARJUN":
+    speed = 0.95     # slightly slower
+elif speaker == "RIYA":
+    speed = 1.05     # slightly faster
+else:
+    speed = 1.0
+
+audio_bytes = tts_line_to_mp3_bytes(text, voice, speed)
         all_bytes += audio_bytes
 
     return all_bytes
